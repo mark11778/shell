@@ -6,19 +6,20 @@ from curses.ascii import isdigit
 
 
 class term:
-    SPECIAL_CHARS = set(['=', '/', '$'])
+    SPECIAL_CHARS = set(['=', '/', '$', '|'])
 
     def __init__(self, cwd):
         self.cwd = cwd
         self.built_in = None
 
     def varSub(self, args):
+        """ go through the split up command and look for vars to be subsituted"""
         for i in range(len(args)):
             if "$" in args[i]:
                 args[i] = os.environ[args[i][1:]] # remove the $
 
-
     def cd(self, args):
+        """ change directory, just updates cwd attribute"""
         if len(args) == 1:
             print("Error cd takes two arguments")
             return
@@ -29,6 +30,7 @@ class term:
                 self.cwd = os.path.join(self.cwd, args[1])
 
     def leave(self, args):
+        """gracefully exits terminal"""
         if len(args) == 1:
             sys.exit(0)
         else:
@@ -38,12 +40,14 @@ class term:
                 print("Error leave takes one argument")
 
     def getcwd(self, args):
+        """ simple getter function """
         if len(args) != 1:
             print("cwd takes only one argument")
         else:
             print(self.cwd)
 
     def export(self, args):
+        """sets envoirment variables"""
         if len(args) == 1 or len(args) > 2:
             print("error export takes two arguements")
         else:
@@ -61,20 +65,43 @@ class term:
             cmd = cmd.strip()
             return cmd.split(" ")
 
-        while True:
-            cmd = input(f"{self.cwd}:> ")
-            arg = parse_input(cmd)
-            if "$" in cmd:
-                self.varSub(arg)
-            if arg[0] in self.built_in:
-                self.built_in[arg[0]](arg)
+        def call_command(args):
+            if args[0] in self.built_in:
+                self.built_in[args[0]](args)
             else:
-                p = subprocess.Popen(arg, cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = subprocess.Popen(args, cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = p.communicate()
                 if err: # true (non-zero return code)
                     print(f"commnad returned an error: {err.decode("utf-8")}")
                 else:
                     print(out.decode("utf-8"))
+
+        def handle_pipes(args):
+            """ for pipes to work we need to take the output of the funciton of the left and input it to the function on
+            the right
+
+            thus, we need ls | grep .py, to only return the files that would have .py in the string (technically .ipynb
+            would also be a match)
+            """
+            lst = 0
+            for i in range(len(args)):
+                if args[i] == "|":
+                    # now everything to the left is the first command
+                    p = subprocess.Popen(args[lst : i + 1], cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    lst = i + 1
+
+
+        while True:
+            cmd = input(f"{self.cwd}:> ")
+            arg = parse_input(cmd)
+            #TODO: implement command subsiution
+            if "$" in cmd:
+                self.varSub(arg)
+            if "|" in cmd:
+
+
+            call_command(arg)
+
 
     def run(self):
         self.built_in = {
