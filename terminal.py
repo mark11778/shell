@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from _ast import arg
 from curses.ascii import isdigit
 
 
@@ -10,6 +11,12 @@ class term:
     def __init__(self, cwd):
         self.cwd = cwd
         self.built_in = None
+
+    def varSub(self, args):
+        for i in range(len(args)):
+            if "$" in args[i]:
+                args[i] = os.environ[args[i][1:]] # remove the $
+
 
     def cd(self, args):
         if len(args) == 1:
@@ -57,6 +64,8 @@ class term:
         while True:
             cmd = input(f"{self.cwd}:> ")
             arg = parse_input(cmd)
+            if "$" in cmd:
+                self.varSub(arg)
             if arg[0] in self.built_in:
                 self.built_in[arg[0]](arg)
             else:
@@ -75,8 +84,6 @@ class term:
             "export": self.export,
         }
         self.strt()
-
-
 
 if __name__ == "__main__":
     t = term(os.getcwd())
