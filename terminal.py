@@ -1,7 +1,8 @@
 import os
 import sys
 import subprocess
-from _ast import arg
+from subprocess import Popen, PIPE
+from collections import deque
 from curses.ascii import isdigit
 
 
@@ -84,21 +85,41 @@ class term:
             would also be a match)
             """
             lst = 0
+            s = deque([])
             for i in range(len(args)):
                 if args[i] == "|":
                     # now everything to the left is the first command
-                    p = subprocess.Popen(args[lst : i + 1], cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    # first command
+                    if lst == 0:
+                        s.append(Popen(args[lst : i], cwd=self.cwd, stdout=PIPE))
+
+                    s.append(Popen(args[lst : i], cwd=self.cwd, stdin = s.pop().stdout, stdout=PIPE))
+
+                    # # last command
+                    # if i == len(args) - 1:
+                    #     p2 = Popen(args[lst + 1 :], cwd=self.cwd, stdout=PIPE)
+
+
                     lst = i + 1
+
+            # we have to do it one more time command does not end in "|"
+            p = Popen(args[lst: ], cwd=self.cwd, stdin=s.pop().stdout, stdout=PIPE)
+            out, err = p.communicate()
+            if err:  # true (non-zero return code)
+                print(f"commnad returned an error: {err.decode("utf-8")}")
+            else:
+                print(out.decode("utf-8"))
 
 
         while True:
             cmd = input(f"{self.cwd}:> ")
             arg = parse_input(cmd)
-            #TODO: implement command subsiution
+            #TODO: implement command subsitution
             if "$" in cmd:
                 self.varSub(arg)
             if "|" in cmd:
-
+                handle_pipes(arg)
+                continue
 
             call_command(arg)
 
