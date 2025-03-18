@@ -7,7 +7,7 @@ from curses.ascii import isdigit
 
 
 class term:
-    SPECIAL_CHARS = set(['=', '/', '$', '|'])
+    SPECIAL_CHARS = {'=', '/', '$', '|'}
 
     def __init__(self, cwd):
         self.cwd = cwd
@@ -61,67 +61,54 @@ class term:
                         print("error do not use special chars in name or vals of enviorment variables")
 
     def strt(self):
-        def parse_input(cmd):
+        def parse_input(cmd_full):
             # remove white space
-            cmd = cmd.strip()
-            return cmd.split(" ")
+            return cmd_full.strip().split(" ")
 
         def call_command(args):
             if args[0] in self.built_in:
                 self.built_in[args[0]](args)
-            else:
-                p = subprocess.Popen(args, cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, err = p.communicate()
-                if err: # true (non-zero return code)
-                    print(f"commnad returned an error: {err.decode("utf-8")}")
-                else:
-                    print(out.decode("utf-8"))
+                return None
+            else: return Popen(args, cwd=self.cwd, stdout=PIPE, stderr=PIPE)
+
 
         def handle_pipes(args):
-            """ for pipes to work we need to take the output of the funciton of the left and input it to the function on
-            the right
-
-            thus, we need ls | grep .py, to only return the files that would have .py in the string (technically .ipynb
-            would also be a match)
-            """
+            """ handling commands with pipes | :)"""
             lst = 0
             s = deque([])
             for i in range(len(args)):
                 if args[i] == "|":
-                    # now everything to the left is the first command
                     # first command
                     if lst == 0:
                         s.append(Popen(args[lst : i], cwd=self.cwd, stdout=PIPE))
-
                     s.append(Popen(args[lst : i], cwd=self.cwd, stdin = s.pop().stdout, stdout=PIPE))
-
-                    # # last command
-                    # if i == len(args) - 1:
-                    #     p2 = Popen(args[lst + 1 :], cwd=self.cwd, stdout=PIPE)
-
-
                     lst = i + 1
+            # handling the last command
+            return Popen(args[lst: ], cwd=self.cwd, stdin=s.pop().stdout, stdout=PIPE)
 
-            # we have to do it one more time command does not end in "|"
-            p = Popen(args[lst: ], cwd=self.cwd, stdin=s.pop().stdout, stdout=PIPE)
+
+        def print_output(p):
+            assert isinstance(p, Popen)
             out, err = p.communicate()
             if err:  # true (non-zero return code)
                 print(f"commnad returned an error: {err.decode("utf-8")}")
             else:
-                print(out.decode("utf-8"))
-
+                print(out.decode("utf-8").strip())
 
         while True:
+            res = None
             cmd = input(f"{self.cwd}:> ")
             arg = parse_input(cmd)
             #TODO: implement command subsitution
             if "$" in cmd:
                 self.varSub(arg)
             if "|" in cmd:
-                handle_pipes(arg)
-                continue
+                res = handle_pipes(arg)
+            else:
+                res = call_command(arg)
 
-            call_command(arg)
+            if res is not None:
+                print_output(res)
 
 
     def run(self):
