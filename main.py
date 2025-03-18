@@ -1,12 +1,12 @@
 import os
-from terminal import term
+from terminal import Term
 from tkwindow import twin
 
 
 
 def main():
     print("Starting up terminal")
-    t = term(os.getcwd())
+    t = Term(os.getcwd())
     win = twin(t)
 
 

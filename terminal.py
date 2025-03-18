@@ -3,10 +3,9 @@ import sys
 import subprocess
 from subprocess import Popen, PIPE
 from collections import deque
-from curses.ascii import isdigit
 
 
-class term:
+class Term:
     SPECIAL_CHARS = {'=', '/', '$', '|'}
 
     def __init__(self, cwd):
@@ -62,10 +61,13 @@ class term:
 
     def strt(self):
         def parse_input(cmd_full):
-            # remove white space
+            """ convert string to args (thus also argv)"""
             return cmd_full.strip().split(" ")
 
         def call_command(args):
+            """finds command weather built in or not
+
+                :returns Popen if not builtin function"""
             if args[0] in self.built_in:
                 self.built_in[args[0]](args)
                 return None
@@ -73,7 +75,9 @@ class term:
 
 
         def handle_pipes(args):
-            """ handling commands with pipes | :)"""
+            """ handling commands with pipes | :)
+
+            :returns Popen of last command"""
             lst = 0
             s = deque([])
             for i in range(len(args)):
@@ -88,6 +92,7 @@ class term:
 
 
         def print_output(p):
+            """handles out of the command"""
             assert isinstance(p, Popen)
             out, err = p.communicate()
             if err:  # true (non-zero return code)
@@ -121,6 +126,6 @@ class term:
         self.strt()
 
 if __name__ == "__main__":
-    t = term(os.getcwd())
+    t = Term(os.getcwd())
     t.run()
 
