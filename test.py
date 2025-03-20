@@ -1,6 +1,9 @@
 import curses
 
+
 def main(screen):
+    cmds = []
+    idx = 0
     string = ""
 
     # Initialize screen properties
@@ -19,6 +22,24 @@ def main(screen):
         if char_code in (curses.KEY_BACKSPACE, 127, 8):  # Covers various backspace codes
             if string:  # Only remove if string is not empty
                 string = string[:-1]
+        elif char_code in (curses.KEY_ENTER, 10):
+            cmds.append(string)
+            string = ""
+            idx = 0
+        elif char_code == curses.KEY_UP:
+            if cmds:
+                if idx < len(cmds):
+                    idx += 1
+                    string = cmds[-idx]
+        elif char_code == curses.KEY_DOWN:
+            if cmds:
+                if idx > 1:
+                    idx -= 1
+                    string = cmds[-idx]
+                else:
+                    idx = 0
+                    string = ""
+
         elif char_code == 27:  # ESC key (exit)
             break
         elif char_code == ord('q'):  # Quit when 'q' is pressed
