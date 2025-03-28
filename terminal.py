@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import TermIO
 from subprocess import Popen, PIPE
 from collections import deque
 
@@ -141,11 +142,17 @@ class Term:
 
         while True:
             res = None
-            cmd = input(f"{self.cwd}:> ")
+            cmd = self.input.read_input()
+
+            # if cmd:
+            #     self.input.cmds.append(cmd)
+
             res = parse_cmd(cmd)
 
             if res is not None:
                 print_output(res)
+            else:
+                quit()
 
     def run(self):
         self.built_in = {
@@ -154,6 +161,7 @@ class Term:
             "cwd": self.getcwd,
             "export": self.export,
         }
+        self.input = TermIO.TermIO(f"{self.cwd}:> ")
         self.strt()
 
 if __name__ == "__main__":
