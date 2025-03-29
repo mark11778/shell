@@ -33,14 +33,12 @@ class autoComplete(Term):
 
         files = os.listdir(new_path)
 
-
         matches = deque()
         for file in files:
             if prefix:
                 if not file.startswith(prefix):
                     continue
             matches.append(file)
-
 
         return matches
 
@@ -51,13 +49,4 @@ class autoComplete(Term):
         if not self.possible:
             return ""
         return self.possible.popleft() if len(self.possible) > 1 else self.possible[0]
-
-
-
-
-
-
-
-
-
 

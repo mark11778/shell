@@ -4,7 +4,7 @@ import tty
 from autocomplete import autoComplete
 
 class TermIO:
-    def __init__(self, base):
+    def __init__(self, base=""):
         self.base = base
         self.cmds = []
         self.idx = 0

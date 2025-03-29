@@ -70,11 +70,17 @@ class Term:
 
             returns:
                 Popen: if the method is not built in
+                None: if error is risen
             """
             if args[0] in self.built_in:
                 self.built_in[args[0]](args)
                 return None
-            else: return Popen(args, cwd=self.cwd, stdout=PIPE, stderr=PIPE)
+            else:
+                try:
+                    return Popen(args, cwd=self.cwd, stdout=PIPE, stderr=PIPE)
+                except Exception as e:
+                    print("Error while executing command:", e)
+                    return None
 
 
         def handle_pipes(args):
@@ -144,15 +150,10 @@ class Term:
             res = None
             cmd = self.input.read_input()
 
-            # if cmd:
-            #     self.input.cmds.append(cmd)
-
             res = parse_cmd(cmd)
 
             if res is not None:
                 print_output(res)
-            else:
-                quit()
 
     def run(self):
         self.built_in = {
