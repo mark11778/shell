@@ -1,6 +1,7 @@
 import sys
 import termios
 import tty
+from autocomplete import autoComplete
 
 class TermIO:
     def __init__(self, base):
@@ -9,6 +10,7 @@ class TermIO:
         self.idx = 0
         self.string = ""
         self.screen = None
+        self.auto = autoComplete()
 
     def clear(self):
         sys.stdout.write('\r')
@@ -19,12 +21,33 @@ class TermIO:
         self.string = ""
         fb = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fb)
+        changed = 1
+        prefix = None
 
         try:
             tty.setraw(fb)
             sys.stdout.write(f"{self.base}")
             while True:
                 ch = sys.stdin.read(1)
+                if ch == '\t':
+                    if prefix is None:
+                        prefix = self.string.split(" ")[-1]
+                    sug = self.auto.tab_pressed(prefix, changed)
+                    changed = 0
+                    idx,space = self.string.rfind("/"), self.string.rfind(" ")
+                    if idx == -1:
+                        self.string = self.string[:space + 1 ] + sug
+                    else:
+                        self.string = self.string[:idx + 1] + sug
+                    self.clear()
+                    sys.stdout.write(self.string)
+                    sys.stdout.flush()
+                    continue
+
+                changed = 1
+                prefix = None
+
+
                 if ch == '\x1b':
                     nxt = sys.stdin.read(1)
                     if nxt == '[':
