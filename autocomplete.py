@@ -4,7 +4,8 @@ from collections import deque
 
 class autoComplete(Term):
     def __init__(self):
-        super().__init__(os.getcwd())
+        # super().__init__(os.getcwd())
+        self.cwd = os.getcwd()
         self.possible = None
 
     def relative_path(self, dirs):

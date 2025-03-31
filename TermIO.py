@@ -1,7 +1,7 @@
 import sys
 import termios
 import tty
-from autocomplete import autoComplete
+# from autocomplete import autoComplete
 
 class TermIO:
     def __init__(self, base=""):
