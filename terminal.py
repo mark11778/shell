@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import TermIO
 from subprocess import Popen, PIPE
 from collections import deque
 
@@ -69,11 +70,17 @@ class Term:
 
             returns:
                 Popen: if the method is not built in
+                None: if error is risen
             """
             if args[0] in self.built_in:
                 self.built_in[args[0]](args)
                 return None
-            else: return Popen(args, cwd=self.cwd, stdout=PIPE, stderr=PIPE)
+            else:
+                try:
+                    return Popen(args, cwd=self.cwd, stdout=PIPE, stderr=PIPE)
+                except Exception as e:
+                    print("Error while executing command:", e)
+                    return None
 
 
         def handle_pipes(args):
@@ -141,7 +148,8 @@ class Term:
 
         while True:
             res = None
-            cmd = input(f"{self.cwd}:> ")
+            cmd = self.input.read_input()
+
             res = parse_cmd(cmd)
 
             if res is not None:
@@ -154,6 +162,7 @@ class Term:
             "cwd": self.getcwd,
             "export": self.export,
         }
+        self.input = TermIO.TermIO(f"{self.cwd}:> ")
         self.strt()
 
 if __name__ == "__main__":
